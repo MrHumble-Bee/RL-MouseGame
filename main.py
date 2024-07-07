@@ -16,6 +16,7 @@ SCREEN_WIDTH = GRID_WIDTH * 2 + CELL_SIZE
 SLIDER_HEIGHT = 30
 TOTAL_HEIGHT = GRID_WIDTH + 7 * SLIDER_HEIGHT  
 FILE_PATH =  os.path.dirname(os.path.abspath(__file__))
+MAX_STEPS_TIL_DEATH = 5000
 
 # Image Paths
 MOUSE_IMAGE_PATH = os.path.join(FILE_PATH, "media/mouse.jpeg")
@@ -49,10 +50,12 @@ class GridWorld:
         self.mouse_pos = (0, 0)
         self.cheese_pos = (GRID_SIZE-1, GRID_SIZE-1)
         self.walls = set()
+        self.steps = 0
         self.start_time = time.time()
 
     def reset(self):
         self.mouse_pos = (0, 0)
+        self.steps = 0
         self.start_time = time.time()
         return self.mouse_pos
 
@@ -70,7 +73,9 @@ class GridWorld:
         if (x, y) not in self.walls:
             self.mouse_pos = (x, y)
 
-        done = self.mouse_pos == self.cheese_pos or (time.time() - self.start_time) > 15
+        self.steps += 1
+
+        done = self.mouse_pos == self.cheese_pos or self.steps >= MAX_STEPS_TIL_DEATH
         return self.mouse_pos, done
 
     def add_wall(self, pos):
@@ -238,6 +243,10 @@ def main():
                     episode_finished = True
                     break
             
+            # Apply timeout penalty if episode ended due to timeout
+            if grid_world.steps >= MAX_STEPS_TIL_DEATH:
+                agent.update_q_table(state, action, -10 + reward, next_state, True, alpha, discount_rate_slider.val)
+                
             last_move_time = current_time
             if episode_finished:
                 draw_q_values(q_table_surface, agent.q_table, 0)
