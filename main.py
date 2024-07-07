@@ -150,14 +150,20 @@ def draw_q_values(surface, q_table, offset_x):
         for y in range(GRID_SIZE):
             rect = pygame.Rect(offset_x + y * CELL_SIZE, x * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             max_q_value = np.max(q_table[x, y])
-            normalized_q = (max_q_value - min_q) / q_range
-            color = pygame.Color(int(255 * (1 - normalized_q)), 0, int(255 * normalized_q))
+            
+            if np.allclose(q_table[x, y], np.zeros_like(q_table[x, y])):
+                color = BLACK
+            else:
+                normalized_q = (max_q_value - min_q) / q_range
+                color = pygame.Color(int(255 * (1 - normalized_q)), 0, int(255 * normalized_q))
+            
             pygame.draw.rect(surface, color, rect)
 
             font = pygame.font.Font(None, 20)
             text = font.render(f"{max_q_value:.2f}", True, WHITE)
             text_rect = text.get_rect(center=rect.center)
             surface.blit(text, text_rect)
+
 
 def main():
     grid_world = GridWorld()
@@ -210,7 +216,7 @@ def main():
         screen.fill(GRAY)
 
         current_time = time.time()
-        if training and current_time - last_move_time >= move_delay:
+        if training and current_time - last_move_time >= move_delay / speed_slider.val:
             episode_finished = False
             for _ in range(int(speed_slider.val)):
                 state = grid_world.mouse_pos
