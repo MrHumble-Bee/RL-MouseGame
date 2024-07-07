@@ -174,12 +174,12 @@ def main():
     grid_world = GridWorld()
     agent = QLearningAgent(GRID_SIZE, 4)
 
-    time_penalty_slider = Slider(10, GRID_WIDTH, SCREEN_WIDTH - 20, SLIDER_HEIGHT, -1, 0, -0.1, "Time Penalty")
+    time_penalty_slider = Slider(10, GRID_WIDTH, SCREEN_WIDTH - 20, SLIDER_HEIGHT, -1, 0, -1, "Time Penalty")
     distance_penalty_slider = Slider(10, GRID_WIDTH + SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, -1, 0, -0.1, "Distance Penalty")
-    cheese_reward_slider = Slider(10, GRID_WIDTH + 2 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, 80, 100, 10, "Cheese Reward")
-    speed_slider = Slider(10, GRID_WIDTH + 3 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, 1, 1000, 10, "Training Speed")
-    discount_rate_slider = Slider(10, GRID_WIDTH + 4 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, 0, 1, 0.99, "Discount Rate")
-    timeout_penalty_slider = Slider(10, GRID_WIDTH + 5 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, -10, 0, -1, "Timeout Penalty")
+    cheese_reward_slider = Slider(10, GRID_WIDTH + 2 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, 80, 100, 100, "Cheese Reward")
+    speed_slider = Slider(10, GRID_WIDTH + 3 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, 1, 100, 1, "Training Speed")
+    discount_rate_slider = Slider(10, GRID_WIDTH + 4 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, 0.9, 1, 0.99, "Discount Rate")
+    timeout_penalty_slider = Slider(10, GRID_WIDTH + 5 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, -100, 0, -1, "Timeout Penalty")
 
     epsilon = 0.05
     alpha = 0.5
