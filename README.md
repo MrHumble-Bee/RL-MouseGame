@@ -17,8 +17,8 @@ This project implements a simple reinforcement learning environment using Pygame
 1. Clone the repository:
 
    ```
-   git clone https://github.com/your-username/reinforcement-learning-mouse-game.git
-   cd reinforcement-learning-mouse-game
+   git clone https://github.com/MrHumble-Bee/RL-MouseGame.git
+   cd RL-MouseGame
    ```
 
 2. Install dependencies:
