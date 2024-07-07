@@ -16,6 +16,7 @@ SCREEN_WIDTH = GRID_WIDTH * 2 + CELL_SIZE
 SLIDER_HEIGHT = 30
 TOTAL_HEIGHT = GRID_WIDTH + 7 * SLIDER_HEIGHT  
 FILE_PATH =  os.path.dirname(os.path.abspath(__file__))
+MAX_STEPS_TIL_DEATH = 5000
 
 # Image Paths
 MOUSE_IMAGE_PATH = os.path.join(FILE_PATH, "media/mouse.jpeg")
@@ -49,10 +50,12 @@ class GridWorld:
         self.mouse_pos = (0, 0)
         self.cheese_pos = (GRID_SIZE-1, GRID_SIZE-1)
         self.walls = set()
+        self.steps = 0
         self.start_time = time.time()
 
     def reset(self):
         self.mouse_pos = (0, 0)
+        self.steps = 0
         self.start_time = time.time()
         return self.mouse_pos
 
@@ -70,7 +73,9 @@ class GridWorld:
         if (x, y) not in self.walls:
             self.mouse_pos = (x, y)
 
-        done = self.mouse_pos == self.cheese_pos or (time.time() - self.start_time) > 15
+        self.steps += 1
+
+        done = self.mouse_pos == self.cheese_pos or self.steps >= MAX_STEPS_TIL_DEATH
         return self.mouse_pos, done
 
     def add_wall(self, pos):
@@ -150,8 +155,13 @@ def draw_q_values(surface, q_table, offset_x):
         for y in range(GRID_SIZE):
             rect = pygame.Rect(offset_x + y * CELL_SIZE, x * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             max_q_value = np.max(q_table[x, y])
-            normalized_q = (max_q_value - min_q) / q_range
-            color = pygame.Color(int(255 * (1 - normalized_q)), 0, int(255 * normalized_q))
+            
+            if np.allclose(q_table[x, y], np.zeros_like(q_table[x, y])):
+                color = BLACK
+            else:
+                normalized_q = (max_q_value - min_q) / q_range
+                color = pygame.Color(int(255 * (1 - normalized_q)), 0, int(255 * normalized_q))
+            
             pygame.draw.rect(surface, color, rect)
 
             font = pygame.font.Font(None, 20)
@@ -159,16 +169,17 @@ def draw_q_values(surface, q_table, offset_x):
             text_rect = text.get_rect(center=rect.center)
             surface.blit(text, text_rect)
 
+
 def main():
     grid_world = GridWorld()
     agent = QLearningAgent(GRID_SIZE, 4)
 
-    time_penalty_slider = Slider(10, GRID_WIDTH, SCREEN_WIDTH - 20, SLIDER_HEIGHT, -1, 0, -0.1, "Time Penalty")
+    time_penalty_slider = Slider(10, GRID_WIDTH, SCREEN_WIDTH - 20, SLIDER_HEIGHT, -1, 0, -1, "Time Penalty")
     distance_penalty_slider = Slider(10, GRID_WIDTH + SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, -1, 0, -0.1, "Distance Penalty")
-    cheese_reward_slider = Slider(10, GRID_WIDTH + 2 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, 80, 100, 10, "Cheese Reward")
-    speed_slider = Slider(10, GRID_WIDTH + 3 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, 1, 1000, 10, "Training Speed")
-    discount_rate_slider = Slider(10, GRID_WIDTH + 4 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, 0, 1, 0.99, "Discount Rate")
-    timeout_penalty_slider = Slider(10, GRID_WIDTH + 5 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, -10, 0, -1, "Timeout Penalty")
+    cheese_reward_slider = Slider(10, GRID_WIDTH + 2 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, 80, 100, 100, "Cheese Reward")
+    speed_slider = Slider(10, GRID_WIDTH + 3 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, 1, 100, 1, "Training Speed")
+    discount_rate_slider = Slider(10, GRID_WIDTH + 4 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, 0.9, 1, 0.99, "Discount Rate")
+    timeout_penalty_slider = Slider(10, GRID_WIDTH + 5 * SLIDER_HEIGHT, SCREEN_WIDTH - 20, SLIDER_HEIGHT, -100, 0, -1, "Timeout Penalty")
 
     epsilon = 0.05
     alpha = 0.5
@@ -210,7 +221,7 @@ def main():
         screen.fill(GRAY)
 
         current_time = time.time()
-        if training and current_time - last_move_time >= move_delay:
+        if training and current_time - last_move_time >= move_delay / speed_slider.val:
             episode_finished = False
             for _ in range(int(speed_slider.val)):
                 state = grid_world.mouse_pos
@@ -232,6 +243,10 @@ def main():
                     episode_finished = True
                     break
             
+            # Apply timeout penalty if episode ended due to timeout
+            if grid_world.steps >= MAX_STEPS_TIL_DEATH:
+                agent.update_q_table(state, action, -10 + reward, next_state, True, alpha, discount_rate_slider.val)
+                
             last_move_time = current_time
             if episode_finished:
                 draw_q_values(q_table_surface, agent.q_table, 0)
